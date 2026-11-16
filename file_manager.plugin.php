@@ -3,7 +3,7 @@
  * Plugin Name: File Manager
  * Plugin URI: https://github.com/slims/slims9_bulian
  * Description: Manajemen terpusat untuk file lampiran bibliografi (tabel files & biblio_attachment).
- * Version: 1.0.1
+ * Version: 1.0.2
  * Author: Waris Agung Widodo
  * Author URI: https://github.com/idoalit
  */

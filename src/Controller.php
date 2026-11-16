@@ -132,7 +132,7 @@ final class Controller
 
         $sort = array_key_exists($_GET['sort'] ?? '', FileRepository::SORTS) ? (string)$_GET['sort'] : 'updated';
         $direction = ($_GET['dir'] ?? '') === 'asc' ? 'asc' : 'desc';
-        $page = max(1, (int)($_GET['page'] ?? 1));
+        $page = min(1000000, max(1, (int)($_GET['page'] ?? 1)));
         $perPage = (int)($_GET['per'] ?? self::PER_PAGE);
         if (!in_array($perPage, self::PER_PAGE_OPTIONS, true)) $perPage = self::PER_PAGE;
 

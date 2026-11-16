@@ -19,9 +19,9 @@ defined('INDEX_AUTH') or exit('Direct access is not allowed!');
     <?php endif; ?>
     <div class="fm-page-title-row">
       <span class="fm-page-icon"><?= V::icon($icon ?? 'folder-open') ?></span>
-      <div>
-        <h2 class="fm-title"><?= V::e($title) ?></h2>
-        <?php if (!empty($subtitle)): ?><p class="fm-subtitle"><?= V::e($subtitle) ?></p><?php endif; ?>
+      <div class="fm-min-0">
+        <h2 class="fm-title fm-clamp-2" title="<?= V::e($title) ?>"><?= V::e($title) ?></h2>
+        <?php if (!empty($subtitle)): ?><p class="fm-subtitle fm-clamp-2" title="<?= V::e($subtitle) ?>"><?= V::e($subtitle) ?></p><?php endif; ?>
       </div>
     </div>
   </div>

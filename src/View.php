@@ -100,14 +100,75 @@ final class View
             $size /= 1024;
             $i++;
         }
-        return ($i === 0 ? (string)(int)$size : number_format($size, 1)) . ' ' . $units[$i];
+        if ($i === 0) return (string)(int)$size . ' ' . $units[$i];
+        [$dec, $thousands] = Lang::separators();
+        return number_format($size, 1, $dec, $thousands) . ' ' . $units[$i];
+    }
+
+    /**
+     * Integer with the locale's thousands separator (40,700 / 40.700).
+     */
+    public static function number(int $value): string
+    {
+        [$dec, $thousands] = Lang::separators();
+        return number_format($value, 0, $dec, $thousands);
     }
 
     public static function date(?string $datetime): string
     {
         if (empty($datetime) || str_starts_with($datetime, '0000')) return '—';
         $ts = strtotime($datetime);
-        return $ts ? date('d M Y H:i', $ts) : '—';
+        if (!$ts) return '—';
+        // Month names go through the translator (Mei, Agu, Okt, Des in id_ID).
+        return date('d', $ts) . ' ' . t(date('M', $ts)) . ' ' . date('Y H:i', $ts);
+    }
+
+    /**
+     * Short, human friendly label for a MIME type (PDF, DOCX, URL, …).
+     */
+    public static function mimeLabel(?string $mime, ?string $fileName = null): string
+    {
+        $mime = strtolower(trim((string)$mime));
+        $known = [
+            'application/pdf' => 'PDF',
+            'text/uri-list' => 'URL',
+            'application/msword' => 'DOC',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'DOCX',
+            'application/vnd.ms-excel' => 'XLS',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => 'XLSX',
+            'application/vnd.ms-powerpoint' => 'PPT',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation' => 'PPTX',
+            'application/vnd.oasis.opendocument.text' => 'ODT',
+            'application/vnd.oasis.opendocument.spreadsheet' => 'ODS',
+            'application/vnd.oasis.opendocument.presentation' => 'ODP',
+            'application/rtf' => 'RTF', 'text/rtf' => 'RTF',
+            'text/plain' => 'TXT',
+            'application/xml' => 'XML', 'text/xml' => 'XML',
+            'application/marc' => 'MARC',
+            'image/jpeg' => 'JPG', 'image/png' => 'PNG', 'image/gif' => 'GIF',
+            'video/mp4' => 'MP4', 'video/x-msvideo' => 'AVI', 'video/mpeg' => 'MPEG',
+            'video/x-flv' => 'FLV', 'video/x-matroska' => 'MKV',
+            'audio/mpeg' => 'MP3', 'audio/ogg' => 'OGG', 'video/ogg' => 'OGG',
+            'application/zip' => 'ZIP',
+        ];
+        if (isset($known[$mime])) return $known[$mime];
+
+        $ext = strtoupper(pathinfo((string)$fileName, PATHINFO_EXTENSION));
+        if ($ext !== '' && preg_match('/^[A-Z0-9]{1,6}$/', $ext)) return $ext;
+        if ($mime === '') return '—';
+
+        $sub = substr($mime, (int)strpos($mime, '/') + 1);
+        $sub = preg_replace('/^(x-|vnd\.)/', '', $sub) ?? $sub;
+        return strtoupper(self::truncate($sub, 10));
+    }
+
+    /**
+     * Shorten text to $max characters (multibyte safe) with an ellipsis.
+     */
+    public static function truncate(?string $text, int $max): string
+    {
+        $text = (string)$text;
+        return mb_strlen($text) > $max ? rtrim(mb_substr($text, 0, $max - 1)) . '…' : $text;
     }
 
     /**

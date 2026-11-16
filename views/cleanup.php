@@ -111,7 +111,7 @@ $tabs = [
               <?php if ($canWrite): ?>
                 <td class="fm-col-check"><input class="fm-checkbox" type="checkbox" name="paths[]" value="<?= V::e($item['path']) ?>" data-fm-check aria-label="<?= V::e($item['path']) ?>"></td>
               <?php endif; ?>
-              <td class="fm-mono fm-break"><?= V::e($item['path']) ?></td>
+              <td><span class="fm-mono fm-break fm-block"><?= V::e($item['path']) ?></span></td>
               <td class="fm-num fm-nowrap"><?= V::e(V::bytes($item['size'])) ?></td>
               <td class="fm-nowrap"><?= V::e($item['mtime'] ? date('d M Y H:i', $item['mtime']) : '—') ?></td>
             </tr>
@@ -121,14 +121,15 @@ $tabs = [
                 <td class="fm-col-check"><input class="fm-checkbox" type="checkbox" name="ids[]" value="<?= (int)$item['file_id'] ?>" data-fm-check aria-label="<?= V::e($item['file_title']) ?>"></td>
               <?php endif; ?>
               <td>
-                <span class="fm-strong"><?= V::e($item['file_title'] !== '' ? $item['file_title'] : t('(untitled)')) ?></span>
+                <span class="fm-strong fm-clamp-2" title="<?= V::e($item['file_title']) ?>"><?= V::e($item['file_title'] !== '' ? $item['file_title'] : t('(untitled)')) ?></span>
                 <span class="fm-muted fm-block">#<?= (int)$item['file_id'] ?></span>
               </td>
-              <td class="fm-mono fm-break">
-                <?= V::e(!empty($item['is_url']) ? $item['file_name'] : Disk::key($item['file_dir'], $item['file_name'])) ?>
-                <?php if ($tab === 'orphan' && empty($item['exists'])): ?><span class="fm-badge fm-badge--destructive"><?= V::e(t('File missing')) ?></span><?php endif; ?>
+              <?php $stored = !empty($item['is_url']) ? $item['file_name'] : Disk::key($item['file_dir'], $item['file_name']); ?>
+              <td class="fm-col-path">
+                <span class="fm-mono fm-truncate" title="<?= V::e($stored) ?>"><?= V::e($stored) ?></span>
+                <?php if ($tab === 'orphan' && empty($item['exists'])): ?><span class="fm-badges"><span class="fm-badge fm-badge--destructive"><?= V::e(t('File missing')) ?></span></span><?php endif; ?>
               </td>
-              <?php if ($tab === 'missing'): ?><td class="fm-num"><?= (int)$item['link_count'] ?></td><?php endif; ?>
+              <?php if ($tab === 'missing'): ?><td class="fm-num"><?= V::e(V::number((int)$item['link_count'])) ?></td><?php endif; ?>
               <td class="fm-nowrap"><?= V::e(V::date($item['last_update'])) ?></td>
               <td class="fm-right"><a class="fm-btn fm-btn--ghost fm-btn--sm" href="<?= V::e(V::url(['fm' => 'detail', 'fid' => (int)$item['file_id']])) ?>"><?= V::label('eye', t('Detail')) ?></a></td>
             </tr>

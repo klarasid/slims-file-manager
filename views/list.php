@@ -51,15 +51,15 @@ V::render('header', [
 <section class="fm-stats">
   <a class="fm-stat" href="<?= V::e(V::url()) ?>">
     <span class="fm-stat-label"><?= V::e(t('Total records')) ?></span>
-    <span class="fm-stat-value"><?= number_format($stats['total']) ?></span>
+    <span class="fm-stat-value"><?= V::e(V::number($stats['total'])) ?></span>
   </a>
   <a class="fm-stat" href="<?= V::e(V::url(['type' => 'url'])) ?>">
     <span class="fm-stat-label"><?= V::e(t('URL attachments')) ?></span>
-    <span class="fm-stat-value"><?= number_format($stats['urls']) ?></span>
+    <span class="fm-stat-value"><?= V::e(V::number($stats['urls'])) ?></span>
   </a>
   <a class="fm-stat" href="<?= V::e(V::url(['status' => 'orphan'])) ?>">
     <span class="fm-stat-label"><?= V::e(t('Not attached')) ?></span>
-    <span class="fm-stat-value"><?= number_format($stats['orphans']) ?></span>
+    <span class="fm-stat-value"><?= V::e(V::number($stats['orphans'])) ?></span>
   </a>
 </section>
 
@@ -84,13 +84,13 @@ V::render('header', [
     <select class="fm-select" name="mime" aria-label="<?= V::e(t('MIME type')) ?>">
       <option value=""><?= V::e(t('All MIME types')) ?></option>
       <?php foreach ($mimes as $mime): ?>
-        <option value="<?= V::e($mime) ?>" <?= $filters['mime'] === $mime ? 'selected' : '' ?>><?= V::e($mime) ?></option>
+        <option value="<?= V::e($mime) ?>" title="<?= V::e($mime) ?>" <?= $filters['mime'] === $mime ? 'selected' : '' ?>><?= V::e(V::mimeLabel($mime) . ' · ' . V::truncate($mime, 40)) ?></option>
       <?php endforeach; ?>
     </select>
     <select class="fm-select" name="folder" aria-label="<?= V::e(t('Folder')) ?>">
       <option value="__all"><?= V::e(t('All folders')) ?></option>
       <?php foreach ($dirs as $d): $value = $d === '' ? '/' : $d; ?>
-        <option value="<?= V::e($value) ?>" <?= $folder === $value ? 'selected' : '' ?>><?= V::e($d === '' ? t('(repository root)') : $d) ?></option>
+        <option value="<?= V::e($value) ?>" title="<?= V::e($d) ?>" <?= $folder === $value ? 'selected' : '' ?>><?= V::e($d === '' ? t('(repository root)') : V::truncate($d, 48)) ?></option>
       <?php endforeach; ?>
     </select>
     <button class="fm-btn fm-btn--secondary" type="submit"><?= V::label('search', t('Search')) ?></button>
@@ -130,7 +130,7 @@ V::render('header', [
               <div class="fm-cell-file">
                 <span class="fm-file-icon <?= $row['missing'] ? 'is-danger' : '' ?>"><?= V::icon($row['is_url'] ? 'globe' : ($row['missing'] ? 'file-x' : 'file-text')) ?></span>
                 <div class="fm-file-meta">
-                  <a class="fm-link fm-strong" href="<?= V::e($detail) ?>"><?= V::e($row['file_title'] !== '' ? $row['file_title'] : t('(untitled)')) ?></a>
+                  <a class="fm-link fm-strong fm-clamp-2" href="<?= V::e($detail) ?>" title="<?= V::e($row['file_title']) ?>"><?= V::e($row['file_title'] !== '' ? $row['file_title'] : t('(untitled)')) ?></a>
                   <span class="fm-muted fm-truncate" title="<?= V::e($row['is_url'] ? $row['file_url'] : \SlimsFileManager\Disk::key($row['file_dir'], $row['file_name'])) ?>">
                     <?= V::e($row['is_url'] ? $row['file_url'] : \SlimsFileManager\Disk::key($row['file_dir'], $row['file_name'])) ?>
                   </span>
@@ -142,12 +142,12 @@ V::render('header', [
                 </div>
               </div>
             </td>
-            <td><span class="fm-badge fm-badge--secondary fm-mono"><?= V::e($row['mime_type'] ?: '—') ?></span></td>
+            <td><span class="fm-badge fm-badge--secondary" title="<?= V::e($row['mime_type'] ?: '') ?>"><?= V::e(V::mimeLabel($row['mime_type'], $row['is_url'] ? null : $row['file_name'])) ?></span></td>
             <td class="fm-num fm-nowrap"><?= V::e($row['is_url'] ? '—' : V::bytes($row['size'])) ?></td>
-            <td class="fm-num"><?= (int)$row['link_count'] ?></td>
+            <td class="fm-num"><?= V::e(V::number((int)$row['link_count'])) ?></td>
             <td class="fm-nowrap">
               <?= V::e(V::date($row['last_update'])) ?>
-              <?php if (!empty($row['uploader'])): ?><span class="fm-muted fm-block"><?= V::e($row['uploader']) ?></span><?php endif; ?>
+              <?php if (!empty($row['uploader'])): ?><span class="fm-muted fm-block fm-truncate fm-truncate--sm" title="<?= V::e($row['uploader']) ?>"><?= V::e($row['uploader']) ?></span><?php endif; ?>
             </td>
             <td class="fm-right fm-nowrap">
               <a class="fm-btn fm-btn--outline fm-btn--sm" href="<?= V::e($detail) ?>"><?= V::label('eye', t('Detail')) ?></a>
@@ -164,25 +164,28 @@ V::render('header', [
     <?php
     $from = ($page - 1) * $perPage + 1;
     $to = min($total, $page * $perPage);
-    $window = 2;
+    // One neighbour on each side keeps the bar compact even with thousands of pages.
+    $window = 1;
     $start = max(1, $page - $window);
     $end = min($pages, $page + $window);
     $pageUrl = fn(int $p) => V::url(array_merge($query, ['page' => $p > 1 ? $p : null]));
-    $navButton = function (int $target, bool $enabled, string $icon, string $label, bool $iconAfter = false) use ($pageUrl) {
-        $content = $iconAfter ? '<span>' . V::e($label) . '</span>' . V::icon($icon) : V::label($icon, $label);
+    $navButton = function (int $target, bool $enabled, string $icon, string $label) use ($pageUrl) {
+        $attrs = ' class="fm-btn fm-btn--outline fm-btn--icon-sm" title="' . V::e($label) . '" aria-label="' . V::e($label) . '"';
         if (!$enabled) {
-            return '<span class="fm-btn fm-btn--outline fm-btn--sm" aria-disabled="true">' . $content . '</span>';
+            return '<span' . $attrs . ' aria-disabled="true">' . V::icon($icon) . '</span>';
         }
-        return '<a class="fm-btn fm-btn--outline fm-btn--sm" href="' . V::e($pageUrl($target)) . '">' . $content . '</a>';
+        return '<a' . $attrs . ' href="' . V::e($pageUrl($target)) . '">' . V::icon($icon) . '</a>';
     };
-    $perQuery = $query;
-    unset($perQuery['per'], $perQuery['page']);
+    $baseQuery = $query;
+    unset($baseQuery['page']);
+    $perQuery = $baseQuery;
+    unset($perQuery['per']);
     ?>
     <footer class="fm-pagination">
-      <span class="fm-muted"><?= V::e(t('Showing %d–%d of %d', $from, $to, $total)) ?></span>
+      <span class="fm-muted fm-pagination-summary"><?= V::e(t('Showing %s–%s of %s', V::number($from), V::number($to), V::number($total))) ?></span>
 
       <div class="fm-pagination-controls">
-        <form class="fm-per-page submitViaAJAX" method="get" action="<?= V::e(V::url($perQuery)) ?>">
+        <form class="fm-pagination-field submitViaAJAX" method="get" action="<?= V::e(V::url($perQuery)) ?>">
           <label class="fm-muted" for="fm-per-page"><?= V::e(t('Rows per page')) ?></label>
           <select class="fm-select fm-select--sm" id="fm-per-page" name="per" data-fm-autosubmit>
             <?php foreach ($perPageOptions as $option): ?>
@@ -191,24 +194,32 @@ V::render('header', [
           </select>
         </form>
 
-        <span class="fm-page-status"><?= V::e(t('Page %d of %d', $page, $pages)) ?></span>
+        <?php if ($pages > 1): ?>
+          <form class="fm-pagination-field submitViaAJAX" method="get" action="<?= V::e(V::url($baseQuery)) ?>">
+            <label class="fm-muted" for="fm-goto-page"><?= V::e(t('Page')) ?></label>
+            <input class="fm-input fm-input--sm fm-page-input" id="fm-goto-page" type="number" name="page"
+                   value="<?= (int)$page ?>" min="1" max="<?= (int)$pages ?>" step="1" inputmode="numeric" required
+                   style="--fm-digits: <?= strlen((string)$pages) ?>">
+            <span class="fm-muted fm-nowrap"><?= V::e(t('of %s', V::number($pages))) ?></span>
+          </form>
+        <?php endif; ?>
 
         <nav class="fm-pages" aria-label="<?= V::e(t('Pagination')) ?>">
-          <?= $navButton(1, $page > 1, 'chevrons-left', t('First')) ?>
-          <?= $navButton($page - 1, $page > 1, 'chevron-left', t('Previous')) ?>
+          <?= $navButton(1, $page > 1, 'chevrons-left', t('First page')) ?>
+          <?= $navButton($page - 1, $page > 1, 'chevron-left', t('Previous page')) ?>
           <?php if ($start > 1): ?>
             <a class="fm-page" href="<?= V::e($pageUrl(1)) ?>">1</a>
-            <?php if ($start > 2): ?><span class="fm-page-gap">…</span><?php endif; ?>
+            <?php if ($start > 2): ?><span class="fm-page-gap" aria-hidden="true">…</span><?php endif; ?>
           <?php endif; ?>
           <?php for ($p = $start; $p <= $end; $p++): ?>
-            <a class="fm-page <?= $p === $page ? 'is-active' : '' ?>" href="<?= V::e($pageUrl($p)) ?>" <?= $p === $page ? 'aria-current="page"' : '' ?>><?= $p ?></a>
+            <a class="fm-page <?= $p === $page ? 'is-active' : '' ?>" href="<?= V::e($pageUrl($p)) ?>" <?= $p === $page ? 'aria-current="page"' : '' ?>><?= V::e(V::number($p)) ?></a>
           <?php endfor; ?>
           <?php if ($end < $pages): ?>
-            <?php if ($end < $pages - 1): ?><span class="fm-page-gap">…</span><?php endif; ?>
-            <a class="fm-page" href="<?= V::e($pageUrl($pages)) ?>"><?= $pages ?></a>
+            <?php if ($end < $pages - 1): ?><span class="fm-page-gap" aria-hidden="true">…</span><?php endif; ?>
+            <a class="fm-page" href="<?= V::e($pageUrl($pages)) ?>"><?= V::e(V::number($pages)) ?></a>
           <?php endif; ?>
-          <?= $navButton($page + 1, $page < $pages, 'chevron-right', t('Next'), true) ?>
-          <?= $navButton($pages, $page < $pages, 'chevrons-right', t('Last'), true) ?>
+          <?= $navButton($page + 1, $page < $pages, 'chevron-right', t('Next page')) ?>
+          <?= $navButton($pages, $page < $pages, 'chevrons-right', t('Last page')) ?>
         </nav>
       </div>
     </footer>

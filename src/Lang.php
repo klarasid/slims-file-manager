@@ -30,6 +30,16 @@ final class Lang
         }
         return self::$dictionary[$text] ?? __($text);
     }
+
+    /**
+     * [decimal separator, thousands separator] for the admin locale.
+     */
+    public static function separators(): array
+    {
+        $locale = (string)($GLOBALS['sysconf']['default_lang'] ?? 'en_US');
+        $commaDecimal = ['id', 'de', 'nl', 'es', 'it', 'pt', 'tr', 'fr', 'ru'];
+        return in_array(substr($locale, 0, 2), $commaDecimal, true) ? [',', '.'] : ['.', ','];
+    }
 }
 
 /**

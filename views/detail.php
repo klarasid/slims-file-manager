@@ -63,7 +63,7 @@ V::render('header', [
     <div class="fm-card-content">
       <dl class="fm-dl">
         <dt><?= V::e(t('Title')) ?></dt>
-        <dd><?= V::e($title) ?></dd>
+        <dd class="fm-wrap"><?= V::e($title) ?></dd>
 
         <?php if ($isUrl): ?>
           <dt><?= V::e(t('URL')) ?></dt>
@@ -72,16 +72,17 @@ V::render('header', [
           <dt><?= V::e(t('Stored file')) ?></dt>
           <dd class="fm-mono fm-break"><?= V::e($file['file_name']) ?></dd>
           <dt><?= V::e(t('Folder')) ?></dt>
-          <dd class="fm-mono"><?= V::e((Disk::normalizeDir($file['file_dir']) ?? '') === '' ? t('(repository root)') : Disk::normalizeDir($file['file_dir'])) ?></dd>
+          <dd class="fm-mono fm-break"><?= V::e((Disk::normalizeDir($file['file_dir']) ?? '') === '' ? t('(repository root)') : Disk::normalizeDir($file['file_dir'])) ?></dd>
           <dt><?= V::e(t('Size')) ?></dt>
           <dd><?= V::e(V::bytes($size)) ?></dd>
         <?php endif; ?>
 
         <dt><?= V::e(t('MIME type')) ?></dt>
-        <dd>
-          <span class="fm-badge fm-badge--secondary fm-mono"><?= V::e($file['mime_type'] ?: '—') ?></span>
+        <dd class="fm-dd-stack">
+          <span class="fm-badge fm-badge--secondary"><?= V::e(V::mimeLabel($file['mime_type'], $isUrl ? null : $file['file_name'])) ?></span>
+          <?php if (!empty($file['mime_type'])): ?><span class="fm-muted fm-mono fm-break"><?= V::e($file['mime_type']) ?></span><?php endif; ?>
           <?php if (!$isUrl && $file['mime_type'] !== $mime): ?>
-            <span class="fm-muted"><?= V::e(t('served as %s', $mime)) ?></span>
+            <span class="fm-muted fm-break"><?= V::e(t('served as %s', $mime)) ?></span>
           <?php endif; ?>
         </dd>
 
@@ -91,7 +92,7 @@ V::render('header', [
               : '<span class="fm-muted">' . V::e(t('None')) . '</span>' ?></dd>
 
         <dt><?= V::e(t('Uploaded by')) ?></dt>
-        <dd><?= V::e($file['uploader'] ?: '—') ?></dd>
+        <dd class="fm-wrap"><?= V::e($file['uploader'] ?: '—') ?></dd>
 
         <dt><?= V::e(t('Created')) ?></dt>
         <dd><?= V::e(V::date($file['input_date'])) ?></dd>
@@ -134,7 +135,7 @@ V::render('header', [
               <?php foreach ($relations as $rel): $bid = (int)$rel['biblio_id']; ?>
               <tr>
                 <td>
-                  <span class="fm-strong"><?= V::e($rel['title'] ?? t('(record #%d not found)', $bid)) ?></span>
+                  <span class="fm-strong fm-clamp-3" title="<?= V::e($rel['title'] ?? '') ?>"><?= V::e($rel['title'] ?? t('(record #%d not found)', $bid)) ?></span>
                   <span class="fm-muted fm-block">#<?= $bid ?><?= !empty($rel['isbn_issn']) ? ' · ' . V::e($rel['isbn_issn']) : '' ?><?= !empty($rel['publish_year']) ? ' · ' . V::e($rel['publish_year']) : '' ?></span>
                 </td>
                 <td><span class="fm-badge fm-badge--outline"><?= V::e($placementLabels[$rel['placement']] ?? ($rel['placement'] ?: '—')) ?></span></td>
@@ -152,7 +153,7 @@ V::render('header', [
                 <td class="fm-right fm-nowrap">
                   <a class="fm-btn fm-btn--ghost fm-btn--sm" href="<?= V::e(V::url(['fm' => 'relation', 'fid' => $fid, 'bid' => $bid])) ?>"><?= V::label('shield', t('Access')) ?></a>
                   <form class="fm-inline notAJAX" method="post" action="<?= V::e(V::url()) ?>" data-fm-form
-                        data-fm-confirm="<?= V::e(t('Detach this file from “%s”?', $rel['title'] ?? '#' . $bid)) ?>"
+                        data-fm-confirm="<?= V::e(t('Detach this file from “%s”?', V::truncate($rel['title'] ?? '#' . $bid, 160))) ?>"
                         data-fm-confirm-ok="<?= V::e(t('Detach')) ?>">
                     <?= Csrf::field() ?>
                     <input type="hidden" name="fm_action" value="detach">
@@ -214,7 +215,7 @@ V::render('header', [
     <input type="hidden" name="fid" value="<?= $fid ?>">
     <div class="fm-dialog-header">
       <h3 class="fm-dialog-title" id="fm-delete-title"><?= V::e(t('Delete this file?')) ?></h3>
-      <p class="fm-dialog-desc"><?= V::e(t('The record “%s” will be removed permanently.', $title)) ?></p>
+      <p class="fm-dialog-desc fm-wrap"><?= V::e(t('The record “%s” will be removed permanently.', V::truncate($title, 160))) ?></p>
     </div>
 
     <?php if ($relations): ?>
@@ -224,7 +225,7 @@ V::render('header', [
           <p class="fm-alert-title"><?= V::e(t('Still attached to %d record(s)', count($relations))) ?></p>
           <ul class="fm-list">
             <?php foreach (array_slice($relations, 0, 8) as $rel): ?>
-              <li><?= V::e($rel['title'] ?? '#' . (int)$rel['biblio_id']) ?></li>
+              <li class="fm-clamp-2"><?= V::e($rel['title'] ?? '#' . (int)$rel['biblio_id']) ?></li>
             <?php endforeach; ?>
             <?php if (count($relations) > 8): ?><li><?= V::e(t('and %d more…', count($relations) - 8)) ?></li><?php endif; ?>
           </ul>

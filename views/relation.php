@@ -17,7 +17,7 @@ $detail = V::url(['fm' => 'detail', 'fid' => $fid]);
 
 V::render('header', [
     'title' => t('Attachment Access'),
-    'subtitle' => t('%s → %s', $file['file_title'], $relation['title'] ?? '#' . $bid),
+    'subtitle' => t('%s → %s', V::truncate($file['file_title'], 90), V::truncate($relation['title'] ?? '#' . $bid, 90)),
     'icon' => 'shield',
     'back' => $detail,
 ]);
