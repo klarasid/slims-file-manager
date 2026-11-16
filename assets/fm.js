@@ -422,6 +422,13 @@
       }
       if (form && form.querySelector('[data-fm-show-if]')) refreshShowIf(form);
 
+      if (target.matches('[data-fm-autosubmit]') && form) {
+        // Goes through the admin's own AJAX handler for .submitViaAJAX forms.
+        if (typeof form.requestSubmit === 'function') form.requestSubmit();
+        else form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+        return;
+      }
+
       if (target.type === 'file' && target.closest('[data-fm-dropzone]')) {
         var zone = target.closest('[data-fm-dropzone]');
         var label = zone.querySelector('[data-fm-dropzone-label]');

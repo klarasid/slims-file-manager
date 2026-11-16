@@ -14,6 +14,7 @@ defined('INDEX_AUTH') or exit('Direct access is not allowed!');
 final class Controller
 {
     private const PER_PAGE = 20;
+    public const PER_PAGE_OPTIONS = [10, 20, 50, 100];
     private const BULK_LIMIT = 100;
     private const CLEANUP_LIMIT = 500;
 
@@ -132,12 +133,14 @@ final class Controller
         $sort = array_key_exists($_GET['sort'] ?? '', FileRepository::SORTS) ? (string)$_GET['sort'] : 'updated';
         $direction = ($_GET['dir'] ?? '') === 'asc' ? 'asc' : 'desc';
         $page = max(1, (int)($_GET['page'] ?? 1));
+        $perPage = (int)($_GET['per'] ?? self::PER_PAGE);
+        if (!in_array($perPage, self::PER_PAGE_OPTIONS, true)) $perPage = self::PER_PAGE;
 
-        $result = $this->repo->paginate($filters, $sort, $direction, $page, self::PER_PAGE);
-        $pages = max(1, (int)ceil($result['total'] / self::PER_PAGE));
+        $result = $this->repo->paginate($filters, $sort, $direction, $page, $perPage);
+        $pages = max(1, (int)ceil($result['total'] / $perPage));
         if ($page > $pages && $result['total'] > 0) {
             $page = $pages;
-            $result = $this->repo->paginate($filters, $sort, $direction, $page, self::PER_PAGE);
+            $result = $this->repo->paginate($filters, $sort, $direction, $page, $perPage);
         }
 
         foreach ($result['rows'] as &$row) {
@@ -152,7 +155,9 @@ final class Controller
             'total' => $result['total'],
             'page' => $page,
             'pages' => $pages,
-            'perPage' => self::PER_PAGE,
+            'perPage' => $perPage,
+            'perPageOptions' => self::PER_PAGE_OPTIONS,
+            'defaultPerPage' => self::PER_PAGE,
             'filters' => $filters,
             'folder' => $filters['dir'] === null ? '__all' : ($filters['dir'] === '' ? '/' : $filters['dir']),
             'sort' => $sort,

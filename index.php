@@ -12,7 +12,7 @@ use function SlimsFileManager\t;
 defined('INDEX_AUTH') or die('Direct access is not allowed!');
 if (INDEX_AUTH != 1) die('Direct access is not allowed!');
 
-const FM_VERSION = '1.0.0';
+const FM_VERSION = '1.0.1';
 
 // IP based access limitation (same rules as the Master File module)
 require_once LIB . 'ip_based_access.inc.php';
